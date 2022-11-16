@@ -4,8 +4,8 @@ extern printf
 extern putchar
 
 section .data		; Data section, initialized variables
-    array: dq 38, 27, 43, 3, 9, 82, 10
-    len:   dw 7
+    array: dq 38, 27, 43, 3, 9, 82, 1, 12, 44, 6324, 5, 6, 7, 11, 42, 80, 3
+    len:   dw 17
     printfmt: db "%d ", 0
 
 section .text           ; Code section.
@@ -40,11 +40,13 @@ merge:
     sub     eax, [rbp-0x40]
     mov     [rbp-0x14], eax   ; n2, size of second subarray
 
-    mov     edi, [rbp-0x10]
+    mov     edi, [rbp-0x10]   ; n1
+    shl     edi, 3            ; n1 * 8
     call    malloc
     mov     [rbp-0x1c], rax   ; L, first subarray
 
-    mov     edi, [rbp-0x14]
+    mov     edi, [rbp-0x14]   ; n1
+    shl     edi, 3            ; n1 * 8
     call    malloc
     mov     [rbp-0x24], rax   ; R, second subarray
     
@@ -184,6 +186,11 @@ mergeSort:
     mov     rdi, [rbp-0x18]   ; arr
     call    merge
 
+    movzx   rdx, word [len] ; 2nd argument array length
+    mov     rsi, rdx
+    lea     rdi, [array]    ; 1st argument (array address)
+    call    printArray
+
     _mergeSort_exit:
     mov     rsp, rbp
     pop     rbp
@@ -232,7 +239,6 @@ main:
     call    printArray
 
     movzx   rdx, word [len] ; 3rd argument, len - 1 (last index)
-    dec     rdx
     xor     rsi, rsi        ; 2nd argument, 0 (first index)
     lea     rdi, [array]    ; 1st argument (array address)
     call    mergeSort
