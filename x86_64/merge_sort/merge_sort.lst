@@ -1,0 +1,273 @@
+     1                                  extern malloc
+     2                                  extern free
+     3                                  extern printf
+     4                                  extern putchar
+     5                                  
+     6                                  section .data		; Data section, initialized variables
+     7 00000000 26000000000000001B-         array: dq 38, 27, 43, 3, 9, 82, 1, 12, 44, 6324, 5, 6, 7, 11, 42, 80, 3
+     7 00000009 000000000000002B00-
+     7 00000012 000000000000030000-
+     7 0000001B 000000000009000000-
+     7 00000024 000000005200000000-
+     7 0000002D 000000010000000000-
+     7 00000036 00000C000000000000-
+     7 0000003F 002C00000000000000-
+     7 00000048 B41800000000000005-
+     7 00000051 000000000000000600-
+     7 0000005A 000000000000070000-
+     7 00000063 00000000000B000000-
+     7 0000006C 000000002A00000000-
+     7 00000075 000000500000000000-
+     7 0000007E 000003000000000000-
+     7 00000087 00                 
+     8 00000088 1100                        len:   dw 17
+     9 0000008A 25642000                    printfmt: db "%d ", 0
+    10                                  
+    11                                  section .text           ; Code section.
+    12                                  
+    13                                      global  main		; the standard gcc entry point
+    14                                  
+    15                                  ; Merges two subarrays of arr[].
+    16                                  ; First subarray is arr[first..middle]
+    17                                  ; Second subarray is arr[middle+1..last]
+    18                                  merge:
+    19 00000000 55                          push    rbp
+    20 00000001 4889E5                      mov     rbp, rsp
+    21 00000004 4883EC50                    sub     rsp, 0x50         
+    22 00000008 48897DC8                    mov     [rbp-0x38], rdi   ; push 1st argument to stack (arr)
+    23 0000000C 8975C4                      mov     [rbp-0x3c], esi   ; push 2nd argument to stack (first index)
+    24 0000000F 8955C0                      mov     [rbp-0x40], edx   ; push 3rd argument to stack (middle index)
+    25 00000012 894DBC                      mov     [rbp-0x44], ecx   ; push 4th argument to stack (last index)
+    26                                  
+    27 00000015 31C0                        xor     eax, eax
+    28 00000017 8945FC                      mov     [rbp-0x4],  eax     ; i, initial index of first subarray
+    29 0000001A 8945F8                      mov     [rbp-0x8],  eax     ; j, initial index of second subarray
+    30 0000001D 8975F4                      mov     [rbp-0xc],  esi     ; k=last, initial index of merged subarray
+    31                                      
+    32                                      ; n1 = middle - first + 1
+    33 00000020 8B45C0                      mov     eax, [rbp-0x40]
+    34 00000023 2B45C4                      sub     eax, [rbp-0x3c]
+    35 00000026 FFC0                        inc     eax
+    36 00000028 8945F0                      mov     [rbp-0x10], eax   ; n1, size of first subarray
+    37                                   
+    38                                      ; n2 = last - middle
+    39 0000002B 8B45BC                      mov     eax, [rbp-0x44]
+    40 0000002E 2B45C0                      sub     eax, [rbp-0x40]
+    41 00000031 8945EC                      mov     [rbp-0x14], eax   ; n2, size of second subarray
+    42                                  
+    43 00000034 8B7DF0                      mov     edi, [rbp-0x10]   ; n1
+    44 00000037 C1E703                      shl     edi, 3            ; n1 * 8
+    45 0000003A E8(00000000)                call    malloc
+    46 0000003F 488945E4                    mov     [rbp-0x1c], rax   ; L, first subarray
+    47                                  
+    48 00000043 8B7DEC                      mov     edi, [rbp-0x14]   ; n1
+    49 00000046 C1E703                      shl     edi, 3            ; n1 * 8
+    50 00000049 E8(00000000)                call    malloc
+    51 0000004E 488945DC                    mov     [rbp-0x24], rax   ; R, second subarray
+    52                                      
+    53 00000052 488B45C8                    mov     rax, qword [rbp-0x38]   ; arr
+    54 00000056 8B5DC4                      mov     ebx, [rbp-0x3c]         ; first
+    55 00000059 FC                          cld                             ; scan in the forward direction
+    56 0000005A 488B7DE4                    mov     rdi, [rbp-0x1c]         ; *dest
+    57 0000005E 488D34D8                    lea     rsi, [rax + rbx*8]      ; *src
+    58 00000062 8B4DF0                      mov     ecx, [rbp-0x10]         ; size_t n
+    59 00000065 F348A5                      rep movsq                       ; copy rcx qword elements from array to subarray L
+    60                                  
+    61 00000068 488B45C8                    mov     rax, qword [rbp-0x38]   ; arr
+    62 0000006C 8B5DC0                      mov     ebx, [rbp-0x40]         ; middle
+    63 0000006F 48FFC3                      inc     rbx                     ; middle++
+    64 00000072 FC                          cld                             ; scan in the forward direction
+    65 00000073 488B7DDC                    mov     rdi, [rbp-0x24]         ; *dest
+    66 00000077 488D34D8                    lea     rsi, [rax + rbx*8]      ; *src
+    67 0000007B 8B4DEC                      mov     ecx, [rbp-0x14]         ; size_t n
+    68 0000007E F348A5                      rep movsq                       ; copy rcx qword elements from array to subarray R
+    69                                  
+    70 00000081 4C8B4DC8                    mov     r9,  [rbp-0x38]        ; arr
+    71 00000085 4C8B55E4                    mov     r10, [rbp-0x1c]        ; L, first subarray
+    72 00000089 4C8B5DDC                    mov     r11, [rbp-0x24]        ; R, second subarray
+    73 0000008D 448B45F4                    mov     r8d, [rbp-0xc]         ; k
+    74                                  
+    75                                      l1:
+    76 00000091 8B45FC                          mov     eax, [rbp-0x4]    ; i
+    77 00000094 3B45F0                          cmp     eax, [rbp-0x10]     
+    78 00000097 7D39                            jge     l2                  
+    79 00000099 8B5DF8                          mov     ebx, [rbp-0x8]    ; j
+    80 0000009C 3B5DEC                          cmp     ebx, [rbp-0x14]
+    81 0000009F 7D31                            jge     l2                      ; while (i < n1 && j < n2)
+    82                                  
+    83 000000A1 498B0CC2                        mov     rcx, [r10 + rax*8]          ; L[i]
+    84 000000A5 498B14DB                        mov     rdx, [r11 + rbx*8]          ; R[j]
+    85 000000A9 4839D1                          cmp     rcx, rdx 
+    86 000000AC 7F12                            jg      l11
+    87                                  
+    88 000000AE 4B890CC1                        mov     [r9 + r8*8], rcx        ; arr[k] = L[i]
+    89 000000B2 FFC0                            inc     eax                     ; i++
+    90 000000B4 8945FC                          mov     [rbp-0x4], eax
+    91 000000B7 49FFC0                          inc     r8                      ; k++
+    92 000000BA 448945F4                        mov     [rbp-0xc], r8d
+    93 000000BE EBD1                            jmp     l1
+    94                                          
+    95                                          l11: 
+    96 000000C0 4B8914C1                        mov     [r9 + r8*8], rdx        ; arr[k] = R[j]
+    97 000000C4 FFC3                            inc     ebx                     ; j++
+    98 000000C6 895DF8                          mov     [rbp-0x8], ebx
+    99 000000C9 49FFC0                          inc     r8                      ; k++
+   100 000000CC 448945F4                        mov     [rbp-0xc], r8d
+   101                                          
+   102 000000D0 EBBF                        jmp     l1
+   103                                  
+   104                                      
+   105                                      l2:
+   106 000000D2 8B45FC                      mov     eax, [rbp-0x4]              ; i
+   107 000000D5 3B45F0                      cmp     eax, [rbp-0x10]             ; if (i>=n1)
+   108 000000D8 7D16                        jge     l3
+   109                                  
+   110 000000DA 498B14C2                    mov     rdx, [r10 + rax*8]          ; L[i]
+   111 000000DE 4B8914C1                    mov     [r9 + r8*8], rdx            ; arr[k] = L[i]
+   112 000000E2 FFC0                        inc     eax                         ; i++
+   113 000000E4 8945FC                      mov     [rbp-0x4], eax
+   114 000000E7 49FFC0                      inc     r8                          ; k++
+   115 000000EA 448945F4                    mov     [rbp-0xc], r8d
+   116 000000EE EBE2                        jmp     l2
+   117                                  
+   118                                  
+   119                                      l3:
+   120 000000F0 8B5DF8                      mov     ebx, [rbp-0x8]              ; j
+   121 000000F3 3B5DEC                      cmp     ebx, [rbp-0x14]             ; if (j>=n2)
+   122 000000F6 7D16                        jge     _merge_exit
+   123                                  
+   124 000000F8 498B0CDB                    mov     rcx, [r11 + rbx*8]          ; R[j]
+   125 000000FC 4B890CC1                    mov     [r9 + r8*8], rcx            ; arr[k] = L[i]
+   126 00000100 FFC3                        inc     ebx                         ; j++
+   127 00000102 895DF8                      mov     [rbp-0x8], ebx
+   128 00000105 49FFC0                      inc     r8                          ; k++
+   129 00000108 448945F4                    mov     [rbp-0xc], r8d
+   130 0000010C EBE2                        jmp     l3
+   131                                  
+   132                                  
+   133                                      _merge_exit:
+   134                                  
+   135 0000010E 488B45E4                    mov     rax, [rbp-0x1c]             ; free L   
+   136 00000112 4889C7                      mov     rdi, rax
+   137 00000115 E8(00000000)                call    free
+   138                                  
+   139 0000011A 488B45DC                    mov     rax, [rbp-0x24]             ; free R
+   140 0000011E 4889C7                      mov     rdi, rax
+   141 00000121 E8(00000000)                call    free
+   142                                  
+   143 00000126 4889EC                      mov     rsp, rbp
+   144 00000129 5D                          pop     rbp
+   145 0000012A C3                          ret   
+   146                                  
+   147                                  
+   148                                  
+   149                                  mergeSort:
+   150 0000012B 55                          push    rbp
+   151 0000012C 4889E5                      mov     rbp, rsp
+   152 0000012F 4883EC20                    sub     rsp, 0x20
+   153 00000133 48897DE8                    mov     [rbp-0x18], rdi   ; push 1st argument to stack (arr)
+   154 00000137 8975E4                      mov     [rbp-0x1c], esi   ; push 2nd argument to stack (first index)
+   155 0000013A 8955E0                      mov     [rbp-0x20], edx   ; push 3rd argument to stack (last index)
+   156                                  
+   157                                      ; if (first >= last)
+   158 0000013D 8B45E4                      mov     eax, [rbp-0x1c]
+   159 00000140 3B45E0                      cmp     eax, [rbp-0x20]
+   160 00000143 7D59                        jge     _mergeSort_exit
+   161                                  
+   162                                      ; middle = first + (last - first) / 2
+   163 00000145 8B45E0                      mov     eax, [rbp-0x20]
+   164 00000148 2B45E4                      sub     eax, [rbp-0x1c]
+   165 0000014B D1E8                        shr     eax, 1
+   166 0000014D 0345E4                      add     eax, [rbp-0x1c]
+   167 00000150 8945FC                      mov     [rbp-0x4], eax    ; store result to local variable, middle  
+   168                                  
+   169                                      ; mergeSort(arr, first, middle)
+   170 00000153 8B55FC                      mov     edx, [rbp-0x4]    ; middle
+   171 00000156 8B75E4                      mov     esi, [rbp-0x1c]   ; first
+   172 00000159 488B7DE8                    mov     rdi, [rbp-0x18]   ; arr
+   173 0000015D E8C9FFFFFF                  call    mergeSort
+   174                                  
+   175                                      ; mergeSort(arr, middle + 1, last)
+   176 00000162 8B55E0                      mov     edx, [rbp-0x20]   ; last
+   177 00000165 8B75FC                      mov     esi, [rbp-0x4]    ; middle + 1
+   178 00000168 FFC6                        inc     esi
+   179 0000016A 488B7DE8                    mov     rdi, [rbp-0x18]   ; arr
+   180 0000016E E8B8FFFFFF                  call    mergeSort
+   181                                  
+   182                                      ; merge(arr, first, middle, last)
+   183 00000173 8B4DE0                      mov     ecx, [rbp-0x20]   ; last
+   184 00000176 8B55FC                      mov     edx, [rbp-0x4]    ; middle
+   185 00000179 8B75E4                      mov     esi, [rbp-0x1c]   ; first
+   186 0000017C 488B7DE8                    mov     rdi, [rbp-0x18]   ; arr
+   187 00000180 E87BFEFFFF                  call    merge
+   188                                  
+   189 00000185 480FB71425-                 movzx   rdx, word [len] ; 2nd argument array length
+   189 0000018A [88000000]         
+   190 0000018E 4889D6                      mov     rsi, rdx
+   191 00000191 488D3C25[00000000]          lea     rdi, [array]    ; 1st argument (array address)
+   192 00000199 E805000000                  call    printArray
+   193                                  
+   194                                      _mergeSort_exit:
+   195 0000019E 4889EC                      mov     rsp, rbp
+   196 000001A1 5D                          pop     rbp
+   197 000001A2 C3                          ret   
+   198                                  
+   199                                  
+   200                                  printArray:
+   201 000001A3 55                          push    rbp
+   202 000001A4 4889E5                      mov     rbp, rsp
+   203 000001A7 4883EC20                    sub     rsp, 0x20
+   204 000001AB 48897DE8                    mov     [rbp-0x18], rdi     ; arr, 1st argument
+   205 000001AF 8975E4                      mov     [rbp-0x1c], esi     ; length, 2nd argument
+   206                                  
+   207 000001B2 4831DB                      xor     rbx, rbx
+   208 000001B5 48895DF8                    mov     [rbp-0x8], rbx      ; i
+   209                                  
+   210                                      _print_member:
+   211 000001B9 488B55E8                    mov     rdx, [rbp-0x18]     ; arr
+   212 000001BD 3B5DE4                      cmp     ebx, [rbp-0x1c]     ; if (i>=length)
+   213 000001C0 7D23                        jge     _print_array_exit
+   214 000001C2 48BF-                       mov	    rdi, printfmt       
+   214 000001C4 [8A00000000000000] 
+   215 000001CC 488B34DA                    mov     rsi, [rdx + rbx*8]  ; arr[i]
+   216 000001D0 4831C0                  	xor     rax, rax
+   217                                      
+   218 000001D3 E8(00000000)                call    printf wrt ..plt	; Call C function printf
+   219 000001D8 488B5DF8                    mov     rbx, [rbp-0x8]
+   220 000001DC 48FFC3                      inc     rbx
+   221 000001DF 48895DF8                    mov     [rbp-0x8], rbx
+   222 000001E3 EBD4                        jmp     _print_member
+   223                                  
+   224                                      _print_array_exit:
+   225 000001E5 BF0A000000                  mov     edi, 10         ; print new line
+   226 000001EA E8(00000000)                call    putchar
+   227                                  
+   228 000001EF 4889EC                      mov     rsp, rbp
+   229 000001F2 5D                          pop     rbp
+   230 000001F3 C3                          ret   
+   231                                  
+   232                                  main:				    
+   233 000001F4 4883EC08                    sub     rsp, 8
+   234 000001F8 4889E5                      mov     rbp, rsp
+   235                                  
+   236 000001FB 480FB71425-                 movzx   rdx, word [len] ; 2nd argument array length
+   236 00000200 [88000000]         
+   237 00000204 4889D6                      mov     rsi, rdx
+   238 00000207 488D3C25[00000000]          lea     rdi, [array]    ; 1st argument (array address)
+   239 0000020F E88FFFFFFF                  call    printArray
+   240                                  
+   241 00000214 480FB71425-                 movzx   rdx, word [len] ; 3rd argument, len - 1 (last index)
+   241 00000219 [88000000]         
+   242 0000021D 4831F6                      xor     rsi, rsi        ; 2nd argument, 0 (first index)
+   243 00000220 488D3C25[00000000]          lea     rdi, [array]    ; 1st argument (array address)
+   244 00000228 E8FEFEFFFF                  call    mergeSort
+   245                                  
+   246 0000022D 480FB71425-                 movzx   rdx, word [len] ; 2nd argument array length
+   246 00000232 [88000000]         
+   247 00000236 4889D6                      mov     rsi, rdx
+   248 00000239 488D3C25[00000000]          lea     rdi, [array]    ; 1st argument (array address)
+   249 00000241 E85DFFFFFF                  call    printArray
+   250                                  
+   251                                  
+   252 00000246 B800000000                  mov	    rax, 0		    ; normal, no error, return value
+   253 0000024B C3                      	ret    
