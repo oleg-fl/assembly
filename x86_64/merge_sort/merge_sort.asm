@@ -27,7 +27,7 @@ merge:
     xor     eax, eax
     mov     [rbp-0x4],  eax     ; i, initial index of first subarray
     mov     [rbp-0x8],  eax     ; j, initial index of second subarray
-    mov     [rbp-0xc],  esi     ; k=last, initial index of merged subarray
+    mov     [rbp-0xc],  esi     ; k=first, initial index of merged subarray
     
     ; n1 = middle - first + 1
     mov     eax, [rbp-0x40]
@@ -122,7 +122,7 @@ merge:
     jge     _merge_exit
 
     mov     rcx, [r11 + rbx*8]          ; R[j]
-    mov     [r9 + r8*8], rcx            ; arr[k] = L[i]
+    mov     [r9 + r8*8], rcx            ; arr[k] = R[i]
     inc     ebx                         ; j++
     mov     [rbp-0x8], ebx
     inc     r8                          ; k++
